@@ -1,0 +1,12 @@
+
+====> Foo!!! 1
+[1mdocgen_tmp/constant_identifier_cannot_change.zig:8:7: [31;1merror: [0m[1mcannot assign to constant
+[0m    y += 1;
+    [32;1m~~^~~~
+[0m[0m[2mreferenced by:
+    main: docgen_tmp/constant_identifier_cannot_change.zig:12:5
+    callMain: /Users/pabloaguiar/oss/zig/build/stage3/lib/zig/std/start.zig:568:17
+    remaining reference traces hidden; use '-freference-trace' to see all reference traces
+
+[0m
+Generating docgen examples [7/8] 

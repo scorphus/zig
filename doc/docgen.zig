@@ -778,6 +778,20 @@ test "term color" {
     try testing.expectEqualSlices(u8, "A<span class=\"t32_1\">green</span>B", result);
 }
 
+test "term color multiline" {
+    const input_bytes = "\x1b[0m\x1b[0m\x1b[2mreferenced by:\n    main: issue_13280.zig:12:5\n    callMain: /src/zig/build/stage3/lib/zig/std/start.zig:568:17\n    remaining reference traces hidden; use '-freference-trace' to see all reference traces\n\x1b[0m";
+    const result = try termColor(std.testing.allocator, input_bytes);
+    defer std.testing.allocator.free(result);
+    const expected_result =
+        \\<span class="t2_0">referenced by:</span>
+        \\<span class="t2_0">    main: issue_13280.zig:12:5</span>
+        \\<span class="t2_0">    callMain: /src/zig/build/stage3/lib/zig/std/start.zig:568:17</span>
+        \\<span class="t2_0">    remaining reference traces hidden; use '-freference-trace' to see all reference traces</span>
+        \\<span class="t2_0"></span>
+    ;
+    try testing.expectEqualSlices(u8, expected_result, result);
+}
+
 fn termColor(allocator: Allocator, input: []const u8) ![]u8 {
     var buf = std.ArrayList(u8).init(allocator);
     defer buf.deinit();
@@ -794,6 +808,13 @@ fn termColor(allocator: Allocator, input: []const u8) ![]u8 {
         switch (state) {
             TermState.Start => switch (c) {
                 '\x1b' => state = TermState.Escape,
+                '\n' => {
+                    if (first_number != 0 or second_number != 0) {
+                        try out.print("</span>\n<span class=\"t{d}_{d}\">", .{ first_number, second_number });
+                    } else {
+                        try out.writeByte('\n');
+                    }
+                },
                 else => try out.writeByte(c),
             },
             TermState.Escape => switch (c) {
@@ -1815,7 +1836,7 @@ test "shell parsed" {
         defer buffer.deinit();
 
         try printShell(buffer.writer(), shell_out, false);
-        std.log.emerg("{s}", .{buffer.items});
+        // std.log.emerg("{s}", .{buffer.items});
         try testing.expectEqualSlices(u8, expected, buffer.items);
     }
     {
